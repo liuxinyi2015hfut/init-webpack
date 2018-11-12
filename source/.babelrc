@@ -1,0 +1,21 @@
+{
+  "presets":[
+    ["env",
+      {
+        "modules":false,
+        "debug":false,
+        "useBuiltIns":true,
+        "targets":{
+          "browsers":"> 3%"
+        }
+      }
+    ]
+  ],
+  "plugins":[
+    "babel-plugin-transform-runtime",
+    "transform-object-rest-spread"
+  ],
+  "env":{
+    "development":{}
+  }
+}
