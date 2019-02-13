@@ -3,35 +3,48 @@ let webpack = require('webpack');
 let merge = require('webpack-merge');
 let commonConfig = require('./webpack.config');
 let CleanWebpackPlugin = require('clean-webpack-plugin');
-
-let keepFile = [];
-
-
 let env = process.env.NODE_ENV;
-let isTest=env==='test';
-let isDev=env==='development';
+let isTest = env === 'test';
+let isDev = env === 'development';
+
+// less变量
+let lessConfig = require('./less.config');
+let openPage = `/index.html`;
 let host = 'localhost';
 let port = 5555;
-let serverPort = 3001;
-let testLocation = '127.0.0.1:8080';
-let openPage='/index.html';
+let testLocation = '192.168.3.84:8888';
+let keepFile = [];
 
-let proxy=null;
-if(isTest){
-	proxy=[
+let proxy = null;
+if (isTest) {
+	proxy = [
 		{
-			context:['/**'],
-			target:`http://${testLocation}`
+			context: ['/**.json'],
+			target: `http://${host}:${port}`,
+		},
+		{
+			context: ['/**'],
+			target: `http://${testLocation}`
 		}
 	];
-}else if(isDev){
-	proxy=[
+} else if (isDev) {
+	proxy = [
 		{
-			context:['/**'],
-			target:`http://${host}:${serverPort}`,
-			pathRewrite:(name)=>{
-				name=name.split('?')[0].split('/');
-				return `/${name[1]}/${name[2]}-${name[3]}.json`
+			context: ['/dev/**'],
+			target: `http://${host}:${port}`,
+			pathRewrite: (urlName) => {
+				let name = urlName.split('?')[0].split('/');
+				if (/\.\w+$/.test(name[name.length - 1])) {
+					return urlName.slice(4)
+				}
+				let devName = name.slice(2).reduce((pre, next) => {
+					if (pre) {
+						pre += '-';
+					}
+					pre += next;
+					return pre
+				}, '');
+				return `/${devName}.json`
 			}
 		}
 	]
@@ -41,16 +54,16 @@ if(isTest){
 module.exports = merge(commonConfig, {
 	// 选择模式告诉webpack可以相应地使用它的内置优化
 	//开发环境，启用如下
-		// NamedChunksPlugin
-		// NamedModulesPlugin。
+	// NamedChunksPlugin
+	// NamedModulesPlugin。
 	mode: 'development',
 	output: {
 		// 「入口分块(entry chunk)」的文件名模板
-		filename: '[name].js',
+		filename: 'js/[name].js',
 		// 必须是绝对路径（使用 Node.js 的 path 模块）
 		path: path.resolve(__dirname, 'build'),
 		//是否在bundle中引入【所包含模块信息】的相关注释
-		pathinfo: true
+		// pathinfo: true
 	},
 	module: {
 		rules: [
@@ -64,36 +77,39 @@ module.exports = merge(commonConfig, {
 			},
 			{
 				test: /\.less$/,
-				include: path.resolve(__dirname, './src'),
+				// include: path.resolve(__dirname, './src'),
 				use: [
 					'style-loader',
 					{
-						loader:'css-loader',
-						options:{
+						loader: 'css-loader',
+						options: {
 							//打包后调试用
-							sourceMap:true
+							sourceMap: true
 						}
 					},
 					'postcss-loader',
 					{
-						loader:'less-loader',
-						options:{
+						loader: 'less-loader',
+						options: {
+							javascriptEnabled: true,
+							// 更换less变量
+							modifyVars: lessConfig,
 							//打包后调试用
-							sourceMap:true
+							sourceMap: true
 						}
 					}
 				]
 			},
 			{
-				test:/\.(eot|svg|woff|woff2|ttf)$/,
-				include:path.resolve(__dirname,'./src/common/iconfont'),
-				loader:'url-loader'
+				test: /\.(eot|svg|woff|woff2|ttf|otf)$/,
+				include: path.resolve(__dirname, './src/common/iconfont'),
+				loader: 'url-loader'
 
 			},
 			{
-				test:/\.(jpg|jpeg|png|gif)$/,
-				include:path.resolve(__dirname,'./src/common/images'),
-				loader:'url-loader'
+				test: /\.(jpg|jpeg|png|gif)$/,
+				include: path.resolve(__dirname, './src/common/images'),
+				loader: 'url-loader'
 
 			},
 			{
@@ -104,56 +120,62 @@ module.exports = merge(commonConfig, {
 		]
 	},
 	// 用于调试
-	devtool:'eval-source-map',
+	devtool: 'eval-source-map',
 	// // webpack-dev-server 和 webpack-dev-middleware中watch模式默认开启
 	// watch:true,
 	// 监听文件变化，排除不需要监听的文件夹
-	watchOptions:{
-		ignored:/node_modules/
+	watchOptions: {
+		ignored: /node_modules/
 	},
-	plugins:[
+	optimization: {
+		//指定环境变量process.env.NODE_ENV，一些library根据环境变量优化代码
+		nodeEnv: env
+	},
+	plugins: [
 		//在构建之前清理构建文件夹
 		new CleanWebpackPlugin(['build'], {
 			// 不清楚的子文件
 			exclude: keepFile
 		}),
 		// 模块热替换
-		new webpack.HotModuleReplacementPlugin(),
-		new webpack.DefinePlugin({
-			'process.env':{
-				'NODE_ENV':JSON.stringify('development')
-			}
-		})
+		new webpack.HotModuleReplacementPlugin()
 	],
-	devServer:{
+	devServer: {
 		// 访问IP
-		host:host,
+		host: '0.0.0.0',
 		// 监听请求的端口
-		port:port,
+		port: port,
 		// 服务器从哪些目录中提供静态文件
-		contentBase:[path.resolve(__dirname,'./serverJSON')],
+		contentBase: [
+			//开发接口假数据文件夹
+			path.resolve(__dirname, './serverJSON'),
+			//生产环境线上静态文件存放文件夹
+			path.resolve(__dirname, '../script')
+		],
 		// 启用模块热替换， 配合webpack.HotModuleReplacementPlugin使用
-		hot:true,
+		hot: true,
 		// // 启用模块热替换而无需页面刷新
 		// hotOnly:true,
 		//启用内联模式
-		inline:true,
+		inline: true,
 		// 一切服务启用gzip压缩
-		compress:true,
+		compress: true,
 		//在所有响应中添加首部
-		headers:{'Access-Control-Allow-Origin':'*'},
+		headers: {'Access-Control-Allow-Origin': '*'},
+		//允许浏览器使用本地IP打开网页
+		useLocalIp: true,
 		// 打开浏览器
-		open:true,
+		open: 'Chrome',
 		//打开浏览器时的页面
-		openPage:openPage,
+		openPage: openPage,
 		// // 启用https服务，可配置自签名证书
 		// https:true,
 		// 精确控制要显示的bundle信息
-		stats:{
+		stats: {
 			//启用控制台的色彩输出
-			color:true,
+			colors: true,
 		},
 		// 代理api请求
-		proxy:proxy,
+		proxy: proxy
 	}
 });

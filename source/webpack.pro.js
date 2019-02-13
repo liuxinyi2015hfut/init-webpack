@@ -4,13 +4,14 @@ let merge = require('webpack-merge');
 let commonConfig = require('./webpack.config');
 let MiniCssExtract = require('mini-css-extract-plugin');
 let CleanWebpackPlugin = require('clean-webpack-plugin');
-let UglifyJsPlugin=require('uglifyjs-webpack-plugin');
-let OptimizeCSSAssetsPlugin=require('optimize-css-assets-webpack-plugin');
+let UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+let OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+let BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
-let keepFile = [];
 
-
+let lessConfig = require('./less.config');
 let domain = '/';
+let keepFile = ['JSON'];
 
 module.exports = merge(commonConfig, {
 	// 选择模式告诉webpack可以相应地使用它的内置优化
@@ -45,11 +46,18 @@ module.exports = merge(commonConfig, {
 					'css-loader',
 					// 自动添加浏览器兼容性前缀
 					'postcss-loader',
-					'less-loader'
+					{
+						loader: 'less-loader',
+						options: {
+							javascriptEnabled: true,
+							// 更换less变量
+							modifyVars: lessConfig,
+						}
+					}
 				]
 			},
 			{
-				test: /\.(eot|svg|woff|woff2|ttf)$/,
+				test: /\.(eot|svg|woff|woff2|ttf|otf)$/,
 				include: path.resolve(__dirname, './src/common/iconfont'),
 				loader: 'url-loader',
 				options: {
@@ -84,9 +92,11 @@ module.exports = merge(commonConfig, {
 	},
 	//优化配置
 	optimization: {
+		//指定环境变量process.env.NODE_ENV，一些library根据环境变量优化代码
+		nodeEnv: 'production',
 		mangleWasmImports: true,
 		//处理压缩
-		minimizer:[
+		minimizer: [
 			// 删除未引用代码，并压缩JS
 			new UglifyJsPlugin({
 				uglifyOptions: {
@@ -98,27 +108,43 @@ module.exports = merge(commonConfig, {
 			new OptimizeCSSAssetsPlugin()
 		],
 		//监测和删除空模块
-		removeEmptyChunks:true,
+		removeEmptyChunks: true,
 		//监测和删除父模块中已包含的模块
-		removeAvailableModules:true,
+		removeAvailableModules: true,
 		//提取重复模块
 		splitChunks: {
-			chunks: 'all',
 			cacheGroups: {
 				//项目公共组件，代码提取
 				common: {
+					chunks: 'all',
+					test: /[\\/src[\\/]/,
 					name: "common",
 					minChunks: 2,
+					priority: -20,
+					minSize: 0,
 					maxInitialRequests: 5,
-					minSize: 0
+					reuseExistingChunk: true
+
 				},
-				//第三方组件，代码提取
+				//公共第三方组件，代码提取
+				vendorCommon: {
+					chunks: 'all',
+					test: /[\\/]node_modules[\\/]/,
+					name: 'vendorCommon',
+					minChunks: 2,
+					priority: -10,
+					minSize: 0,
+					enforce: true
+				},
+				//独立第三方组件，代码提取
 				vendor: {
-					test: /node_modules/,
-					name: "vendor",
+					chunks: 'all',
+					test: /[\\/]node_modules[\\/]/,
+					//块名称的连接符
+					automaticNameDelimiter: '-',
 					minChunks: 1,
-					//优先级
-					priority: 10,
+					priority: -15,
+					minSize: 0,
 					enforce: true
 				}
 			}
@@ -126,18 +152,19 @@ module.exports = merge(commonConfig, {
 	},
 	plugins: [
 		//在构建之前清理构建文件夹
-		new CleanWebpackPlugin(['../script'], {
+		new CleanWebpackPlugin(['../script/'], {
 			//允许清楚webpack根目录之外的文件夹
 			allowExternal: true,
 			// 不清楚的子文件
 			exclude: keepFile
 		}),
 		new MiniCssExtract({filename: 'css/[name].[contenthash:8].css'}),
-		//指定环境变量，一些library根据环境变量优化代码
-		new webpack.DefinePlugin({
-			'process.env':{
-				'NODE_ENV':JSON.stringify('production')
-			}
+		//webpack打包输出文件可视化
+		new BundleAnalyzerPlugin({
+			analyzerHost: 'localhost',
+			analyzerPort: 4321,
+			analyzerMode: 'static',
+			reportFilename: 'js/report.html'
 		})
 	]
 })

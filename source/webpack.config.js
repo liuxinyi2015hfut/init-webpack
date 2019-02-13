@@ -5,7 +5,6 @@ let HtmlWebpackPlugin = require('html-webpack-plugin');
 let HappyPack = require('happypack');
 
 
-
 //模板生成HTML文件
 let pages = [
 	{
@@ -13,14 +12,19 @@ let pages = [
 		chunks: ['index'],
 		filename: 'index.html'
 	}
-].map(item => new HtmlWebpackPlugin({
-	templateParameters: {
-		title: item.title
-	},
-	template: './htmlTemplate.ejs',
-	chunks: [...item.chunks,'common','vendor','runtime'],
-	filename: item.filename
-}));
+].map(item => {
+	let itemVendor = item.chunks.map(ite => 'vendor-' + ite);
+	return (
+		new HtmlWebpackPlugin({
+			templateParameters: {
+				title: item.title
+			},
+			template: './htmlTemplate.ejs',
+			chunks: [...item.chunks, ...itemVendor, 'common', 'vendorCommon', 'runtime'],
+			filename: item.filename
+		})
+	)
+});
 
 module.exports = {
 	// 设置webpack编译用于什么环境，默认web，可省略
@@ -38,7 +42,8 @@ module.exports = {
 	//bundle中排除的外部依赖
 	externals: {
 		// //import $ from 'jquery';
-		// jquery:'jQuery'
+		// jquery:'jQuery',
+		// echarts:'echarts'
 	},
 	module: {
 		// //不解析匹配到的模块
@@ -49,13 +54,13 @@ module.exports = {
 			// - 尽量避免 exclude，更倾向于使用 include
 			{
 				test: /\.js$/,
-				include: path.resolve(__dirname, './src'),
+				include: [path.resolve(__dirname, './src')],
 				loader: 'babel-loader',
 				options: {
 					//将转译结果缓存到文件系统中，加快babel转译速度
 					cacheDirectory: true
 				}
-			},
+			}
 			// {
 			// 	test: /\.ejs$/,
 			// 	include:path.resolve(__dirname,'./src/template'),
@@ -72,13 +77,13 @@ module.exports = {
 	resolve: {
 		//使用绝对路径导入模块时，只在设定的目录中搜索
 		modules: [path.resolve(__dirname, './node_modules')],
-		//设置导入路径别名
-		alias: {
-			'@': path.resolve(__dirname, './src')
-		},
+		// //设置导入路径别名
+		// alias: {
+		// 	'@': path.resolve(__dirname, './src')
+		// },
 		//自动解析确定的扩展，能够使用户在引入特定类型模块时不带扩展名
 		extensions: ['.js'],
-		symlinks:false
+		symlinks: false
 	},
 	plugins: [
 		...pages
