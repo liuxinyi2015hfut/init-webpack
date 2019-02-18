@@ -4,7 +4,6 @@ let merge = require('webpack-merge');
 let commonConfig = require('./webpack.config');
 let MiniCssExtract = require('mini-css-extract-plugin');
 let CleanWebpackPlugin = require('clean-webpack-plugin');
-let UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 let OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 let BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
@@ -95,18 +94,6 @@ module.exports = merge(commonConfig, {
 		//指定环境变量process.env.NODE_ENV，一些library根据环境变量优化代码
 		nodeEnv: 'production',
 		mangleWasmImports: true,
-		//处理压缩
-		minimizer: [
-			// 删除未引用代码，并压缩JS
-			new UglifyJsPlugin({
-				uglifyOptions: {
-					cache: true,
-					parallel: true
-				}
-			}),
-			// 压缩CSS代码
-			new OptimizeCSSAssetsPlugin()
-		],
 		//监测和删除空模块
 		removeEmptyChunks: true,
 		//监测和删除父模块中已包含的模块
@@ -158,7 +145,10 @@ module.exports = merge(commonConfig, {
 			// 不清楚的子文件
 			exclude: keepFile
 		}),
+		//提取css到单独的文件
 		new MiniCssExtract({filename: 'css/[name].[contenthash:8].css'}),
+		// 压缩CSS代码
+		new OptimizeCSSAssetsPlugin(),
 		//webpack打包输出文件可视化
 		new BundleAnalyzerPlugin({
 			analyzerHost: 'localhost',
