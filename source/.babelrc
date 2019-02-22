@@ -9,13 +9,18 @@
           "browsers":"> 1%"
         }
       }
-    ]
+    ],
+    "react"
   ],
   "plugins": [
     "babel-plugin-transform-object-rest-spread",
     "babel-plugin-transform-class-properties"
   ],
   "env":{
-    "development":{}
+    "development": {
+      "presets": [
+        "react-hmre"
+      ]
+    }
   }
 }
