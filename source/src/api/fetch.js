@@ -2,8 +2,6 @@ import config from '../config/index';
 import  'whatwg-fetch';
 import {getSession} from '../utils/util';
 
-
-
 export const get=(url)=>(
 	fetch(config.requestPrefix+url,{
 		method:'GET',
