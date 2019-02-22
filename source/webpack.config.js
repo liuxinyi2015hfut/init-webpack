@@ -1,8 +1,6 @@
 let path = require('path');
 //webpack 4.0 不需要json-loader
-
 let HtmlWebpackPlugin = require('html-webpack-plugin');
-let HappyPack = require('happypack');
 
 
 //模板生成HTML文件
