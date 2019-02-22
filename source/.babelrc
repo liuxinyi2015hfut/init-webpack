@@ -14,7 +14,8 @@
   ],
   "plugins": [
     "babel-plugin-transform-object-rest-spread",
-    "babel-plugin-transform-class-properties"
+    "babel-plugin-transform-class-properties",
+    ["import",{"libraryName": "antd", "libraryDirectory": "es", "style": true }]
   ],
   "env":{
     "development": {
