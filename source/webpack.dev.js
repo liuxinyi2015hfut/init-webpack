@@ -18,11 +18,7 @@ let proxy = null;
 if (isTest) {
 	proxy = [
 		{
-			context: ['/**.json'],
-			target: `http://${host}:${port}`,
-		},
-		{
-			context: ['/**'],
+			context: ['/**','!**/*.json'],
 			target: `http://${testLocation}`
 		}
 	];
