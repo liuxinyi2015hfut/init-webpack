@@ -14,7 +14,15 @@ export const get=(url)=>(
 		}
 	}).then(res=>res.json())
 );
-
+export const getFile=(url)=>(
+	fetch(config.requestPrefix+url,{
+		method:'GET',
+		credentials:'include',
+		headers:{
+			token:getSession('token')
+		}
+	}).then(res => res.blob())
+);
 export const post=(url,data)=>{
 
 	if(config.changePost){
