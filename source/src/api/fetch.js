@@ -14,14 +14,18 @@ export const get=(url)=>(
 		}
 	}).then(res=>res.json())
 );
-export const getFile=(url)=>(
-	fetch(config.requestPrefix+url,{
-		method:'GET',
-		credentials:'include',
-		headers:{
-			token:getSession('token')
+export const getFile = (url, type) => (
+	fetch(config.requestPrefix + url, {
+		method: 'GET',
+		credentials: 'include',
+		headers: {
+			token: getSession('token')
 		}
-	}).then(res => res.blob())
+	}).then(res => res.blob()).then(data => {
+		let blob = new Blob([data], {type});
+		let fileUrl = window.URL.createObjectURL(blob);
+		window.location.href = fileUrl;
+	})
 );
 export const post=(url,data)=>{
 
