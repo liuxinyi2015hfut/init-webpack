@@ -67,8 +67,24 @@ module.exports = merge(commonConfig, {
 				test: /\.css$/,
 				use: [
 					'style-loader',
-					'css-loader',
-					'postcss-loader'
+					{
+						loader:'css-loader',
+						options:{
+							// css文件中引入less文件也需要进行编译
+							importLoaders:2
+						}
+					},
+					'postcss-loader',
+					 {
+						loader: 'less-loader',
+						options: {
+							javascriptEnabled: true,
+							// 更换less变量
+							modifyVars: lessConfig,
+							//打包后调试用
+							sourceMap: true
+						}
+					}
 				]
 			},
 			{
